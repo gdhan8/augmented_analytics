@@ -199,7 +199,7 @@ def log_to_csv(log_file, data):
     with open(log_file, mode='a', newline='') as file:
         writer = csv.DictWriter(file, fieldnames=data.keys())
         if not file_exists:
-            writer.writeheader()  # Write header if file doesn't exist
+            writer.writeheader()
         writer.writerow(data)
 
 # def process_user_instruction(instruction=None, csv_file_path=None, client=None, model=None):
@@ -264,7 +264,7 @@ def process_user_instruction(instruction=None, csv_file_path=None, client=None, 
     Returns:
         dict: A dictionary containing the question, answer, analysis, method, final code, and visualization (if any).
     """
-    log_file = "llm_analysis_log.csv"  # Define the log file path
+    log_file = "llm_analysis_log.csv" 
     log_data = {
         "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "Original_Question": instruction,
@@ -278,34 +278,25 @@ def process_user_instruction(instruction=None, csv_file_path=None, client=None, 
     }
     visualization = None
     try:
-        # Load the CSV file
         df = pd.read_csv(csv_file_path)
 
-        # Preview the DataFrame
         df_preview = df.head().to_string()
 
-        # Generate pandas code based on the instruction and preview
         code = generate_pandas_code(nl_instruction=instruction, df_preview=df_preview, client=client, model=model)
 
-        # Correct the generated code
         corrected_code = correct_code(code_str=code, nl_instruction=instruction, df_preview=df_preview, client=client, model=model, error_message="")
 
-        # Execute the corrected code
         exec_env = {"df": df}
         execution_result, final_code = execute_generated_code(code_str=corrected_code, exec_env=exec_env)
-
-        # Check for visualization (e.g., Matplotlib figure)
         
-        if "plt" in exec_env:  # Check if Matplotlib is used
+        if "plt" in exec_env:
             import matplotlib.pyplot as plt
-            visualization = plt.gcf()  # Get the current figure
+            visualization = plt.gcf()
 
-        # Synthesize the final answer
         question, answer, analysis, method = synthesize_final_answer(
             original_question=instruction, execution_result=execution_result, client=client, model=model
         )
 
-        # Update log data
         log_data.update({
             "Final_Answer": answer,
             "Analysis": analysis,
@@ -317,10 +308,8 @@ def process_user_instruction(instruction=None, csv_file_path=None, client=None, 
     except Exception as e:
         log_data["Error"] = str(e)
 
-    # Log the data to the CSV file
     log_to_csv(log_file, log_data)
 
-    # Return the results
     return {
         "Question": log_data["Original_Question"],
         "Answer": log_data["Final_Answer"],
@@ -340,7 +329,6 @@ def llm_analysis_app():
 
     if uploaded_file is not None and instruction.strip():
         if st.button("Process Instruction"):
-            # Assuming process_user_instruction returns a dictionary with the required keys
             result = process_user_instruction(
                 instruction=instruction, 
                 csv_file_path=uploaded_file, 
@@ -370,7 +358,6 @@ def llm_analysis_app():
                 st.subheader("Execution Result")
                 st.write(result.get("Execution_Result", "No execution result available."))
 
-                # Render visualization if available
                 if result.get("Visualization"):
                     st.subheader("Visualization")
                     st.pyplot(result["Visualization"])
